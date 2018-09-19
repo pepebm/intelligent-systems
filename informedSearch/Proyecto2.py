@@ -13,19 +13,19 @@ def busquedaAstar(edoInicial, edoFinal, heuristica):
         result = 'Already solved'
     else:
         if heuristica == 0:
-            result = slots(edoInicial, edoFinal)
+            result = slots(edoInicial, edoFinal, 0)
         else:
-            result = projectManhattan(edoInicial, edoFinal)
+            result = projectManhattan(edoInicial, edoFinal, 1)
     return result
 
 # Distance Manhattan heuristic approach
-def projectManhattan(initial, end):
+def projectManhattan(initial, end, method):
     # Initializing
     sol = 0
     result = ''
     zero = _findZero(initial)
     # Add initial state manually
-    nodes = [Node(initial, zero, '')]
+    nodes = [Node(initial, zero, '', 0 ,me)]
     nodes[0].current = initial
     nodes[0].route = ''
     nodes[0].parent = nodes[0]
@@ -57,13 +57,11 @@ def projectManhattan(initial, end):
     return result
 
 # Numbers out of place heuristic approach
-def slots(initial, end):
+def slots(initial, end, method):
     # Initializing
     sol = 0
-    result = ''
-    zero = _findZero(initial)
     # Add initial state manually
-    nodes = [Node(initial, zero, '')]
+    nodes = [Node(initial, _findZero(initial), '', 0, method, end)]
     nodes[0].current = initial
     nodes[0].route = ''
     nodes[0].parent = nodes[0]
@@ -72,9 +70,9 @@ def slots(initial, end):
     # Loop until every possible solution is calculated,
     # if a solution is found, the cycle breaks
     while len(nodes) != 0:
-        # LIFO
-        node = nodes.pop()
-        node.makeMovement()
+        # sort list based on next movement cost (min -> max)
+        sorted(nodes, key=lambda node=node.nextCost)
+        node = nodes.pop(0)
         if not _checkVisited(visited, node):
             # Add new node position
             visited.append(node.current)
@@ -88,8 +86,9 @@ def slots(initial, end):
             break
         # Find the possible moves and make a Node for each one
         for m in _checkMove(node.zero, visited):
+            
             # Build new branches of the tree
-            nodes.append(Node(node, _findZero(node.current), m))
+            nodes.append(Node(node, _findZero(node.current), m, node.generalCost, method, end))
     if sol != 1:
         result = 'No solution found'
     return result
@@ -139,10 +138,3 @@ def _printMatrix(arr):
     for i in arr:
         print(i)
     print('')
-
-def _countUnallocated(current, goal):
-    counter = 0
-    for i in range(len(current)):
-        for j in range(len(current)):
-            if current[i][j] != goal[i][j]:
-                counter += 1
