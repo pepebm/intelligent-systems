@@ -7,13 +7,17 @@ class Node:
         self.generalCost = generalCost
         self.route = ''
         self.goal = goal
-        self.makeMovement()
-        if method == 0:
+        self.currentCost = 0
+        if not isinstance(self.parent, list):
+            self.makeMovement()
+        else:
+            self.current = self.parent
+        if method is 0:
             self.countUnallocated()
         else:
             for i, a in enumerate(self.current):
                 for j, b in enumerate(a):
-                    self.getDistance(b, i, j)
+                    self.currentCost += self.getDistance(b, i, j)
 
     # Function that will make the move based on the direction of the Node
     def makeMovement(self):
@@ -65,9 +69,9 @@ class Node:
         counter = 0
         for i in range(len(self.current)):
             for j in range(len(self.current)):
-                if current[i][j] != self.goal[i][j]:
+                if self.current[i][j] != self.goal[i][j]:
                     counter += 1
-        self.nextCost = counter
+        self.currentCost = counter
 
     # Helper function that will make the calcs of Manhanttan distance
     # for each position
@@ -79,4 +83,4 @@ class Node:
                 break
             except ValueError:
                 pass
-        self.nextCost = abs(y - _y) + abs(x - _x)        
+        return abs(y - _y) + abs(x - _x)        

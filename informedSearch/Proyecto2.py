@@ -22,10 +22,8 @@ def busquedaAstar(edoInicial, edoFinal, heuristica):
 def projectManhattan(initial, end, method):
     # Initializing
     sol = 0
-    result = ''
-    zero = _findZero(initial)
     # Add initial state manually
-    nodes = [Node(initial, zero, '', 0 ,me)]
+    nodes = [Node(initial, _findZero(initial), '', 0, method, end)]
     nodes[0].current = initial
     nodes[0].route = ''
     nodes[0].parent = nodes[0]
@@ -34,15 +32,7 @@ def projectManhattan(initial, end, method):
     # Loop until every possible solution is calculated,
     # if a solution is found, the cycle breaks
     while len(nodes) != 0:
-        # FIFO
         node = nodes.pop(0)
-        node.makeMovement()
-        if not _checkVisited(visited, node):
-            # Add new node position
-            visited.append(node.current)
-        else:
-            # If node has already been visited skip this iteration
-            continue
         # Check if we have the solution
         if node.current == end:
             sol = 1
@@ -50,8 +40,17 @@ def projectManhattan(initial, end, method):
             break
         # Find the possible moves and make a Node for each one
         for m in _checkMove(node.zero, visited):
+            # Make move at init func of Node
+            n = Node(node, _findZero(node.current),
+                     m, node.generalCost, method, end)
+            if not _checkVisited(visited, n):
+                # Add new node position
+                visited.append(n.current)
+            else:
+                # If node has already been visited skip this iteration
+                continue
             # Build new branches of the tree
-            nodes.append(Node(node, _findZero(node.current), m))
+            nodes.append(n)
     if sol != 1:
         result = 'No solution found'
     return result
@@ -71,14 +70,8 @@ def slots(initial, end, method):
     # if a solution is found, the cycle breaks
     while len(nodes) != 0:
         # sort list based on next movement cost (min -> max)
-        sorted(nodes, key=lambda node=node.nextCost)
+        sorted(nodes, key=lambda node: node.currentCost)
         node = nodes.pop(0)
-        if not _checkVisited(visited, node):
-            # Add new node position
-            visited.append(node.current)
-        else:
-            # If node has already been visited skip this iteration
-            continue
         # Check if we have the solution
         if node.current == end:
             sol = 1
@@ -86,9 +79,17 @@ def slots(initial, end, method):
             break
         # Find the possible moves and make a Node for each one
         for m in _checkMove(node.zero, visited):
-            
+            # Make move at init func of Node
+            n = Node(node, _findZero(node.current),
+                     m, node.generalCost, method, end)
+            if not _checkVisited(visited, n):
+                # Add new node position
+                visited.append(n.current)
+            else:
+                # If node has already been visited skip this iteration
+                continue
             # Build new branches of the tree
-            nodes.append(Node(node, _findZero(node.current), m, node.generalCost, method, end))
+            nodes.append(n)
     if sol != 1:
         result = 'No solution found'
     return result
