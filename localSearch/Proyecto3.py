@@ -3,18 +3,46 @@
     ---- N - Queen problem with Hill Climbing ----
         · Heuristic: number of queens in attack position
 """
-
 from random import randint
+from numpy import zeros
 from copy import deepcopy
 
-# TODO DELETE THIS IMPORT
-import pry
-
 def busquedaHC(N, lateral, M):
-    if lateral:
-        sideMoveEnabled(N, M)
-    else:
-        sideMoveDisabled(N, M)
+    for reps in range(M+1):
+        board = createBoard(N)
+        visited = []
+        val = heuristic(board)
+        qPos = findQueens(board)
+        bestVal = board
+        visitedBreak = False
+        while val > 0 and not visitedBreak:
+            v = 0
+            for neighbor in qPos:
+                moves = searchMoves(N, neighbor)
+                for m in moves:
+                    temp = generateMove(neighbor, m, board, N)
+                    if checkVisited(visited, temp):
+                        v += 1
+                        if visitedBreak >= N:
+                            visitedBreak = True
+                            break
+                        else: continue
+                    neighborVal = heuristic(temp)
+                    if neighborVal == 0:
+                        bestVal = temp
+                        print("*"*10, " Solution found in round {} ".format(reps), "*"*10)
+                        printBoard(bestVal)
+                        return
+                    if neighborVal < val or (neighborVal <= val and lateral):
+                        bestVal = temp
+                        val = neighborVal
+                    if qPos.index(neighbor) == len(qPos) - 1:
+                        visitedBreak = True
+                        break
+                visited.append(temp)
+            board = bestVal
+            qPos = findQueens(board)
+    print("No solution found in {} rounds".format(reps))
 
 # This function will count the number of queens that are in
 # attack position, that number will be the heuristic value
@@ -31,108 +59,23 @@ def heuristic(b):
             # Check column
             if(qPos[j][1] == cQueen[1]):
                 h += 1
-    print("h: ", h)
-    printBoard(b)
-    return h
-
-# This function will count the number of queens that are in
-# attack position, that number will be the heuristic value
-# that will determine the next action. This func will check diagonally
-def heuristic_Diagonal(b):
-    h = 0
-    qPos = findQueens(b)
-    for i in range(len(qPos)):
-        cQueen = qPos.pop(0)
-        for j in range(len(qPos)):
-            # Check row
-            if(qPos[j][0] == cQueen[0]):
-                h += 1
-            # Check column
-            if(qPos[j][1] == cQueen[1]):
-                h += 1
             # Check diagonally
             if(abs(cQueen[0] - qPos[j][0]) == abs(cQueen[1] - qPos[j][1])):
                 h += 1
-    print("h: ", h)
-    printBoard(b)
     return h
-
-# Hill climbing algorithm without diagonal move's
-def sideMoveDisabled(N, M):
-    for reps in range(M):
-        print('*'*15,' Round - ', reps, ' ', '*'*15)
-        board = createBoard(N)
-        visited = []
-        val = heuristic(board)
-        qPos = findQueens(board)
-        bestVal = board
-        while(val != 0):
-            for i in range(len(qPos)):
-                neighbor = qPos.pop(0)
-                moves = searchMoves(N, neighbor)
-                for j in range(len(moves)):
-                    tempBoard = generateMove(neighbor, moves[j], board)
-                    if checkVisited(visited, tempBoard): continue
-                    neighborVal = heuristic(tempBoard)
-                    if neighborVal == 0:
-                        bestVal = tempBoard
-                        printBoard(tempBoard)
-                        return
-                    if neighborVal < val:
-                        bestVal = tempBoard
-                        val = neighborVal
-                visited.append(tempBoard)
-            board = bestVal
-            qPos = findQueens(board)
-    print('No solution found')
-
-# Hill climbing algorithm with diagonal move's
-def sideMoveEnabled(N, M):
-    for reps in range(M):
-        print('*'*15,' Round - ', reps, ' ', '*'*15)
-        board = createBoard(N)
-        visited = []
-        val = heuristic_Diagonal(board)
-        qPos = findQueens(board)
-        bestVal = board
-        while(val != 0):
-            for i in range(len(qPos)):
-                neighbor = qPos.pop(0)
-                moves = searchMoves(N, neighbor)
-                for j in range(len(moves)):
-                    tempBoard = generateMove(neighbor, moves[j], board)
-                    if checkVisited(visited, tempBoard): continue
-                    neighborVal = heuristic_Diagonal(tempBoard)
-                    if neighborVal == 0:
-                        bestVal = tempBoard
-                        printBoard(tempBoard)
-                        return
-                    if neighborVal < val:
-                        bestVal = tempBoard
-                        val = neighborVal
-                visited.append(tempBoard)
-            board = bestVal
-            qPos = findQueens(board)
-    print('No solution found')
 
 # Helper function that will make a deepCopy of the current board &
 # create a new one with the move passed
-def generateMove(start, finish, b):
-    # print("old board")
-    # printBoard(b)
+def generateMove(start, finish, b, N):
     new_b = deepcopy(b)
     new_b[start[0]][start[1]], new_b[finish[0]][finish[1]] = 0, 1
-    # print("new board")
-    # printBoard(new_b)
     return new_b
 
 # Helper function that will check if current board has been visited previously
 def checkVisited(visited, b):
-    result = False
     for i, item in enumerate(visited): 
-        if(item == b): 
-            result = True
-    return result
+        if(item == b): return True
+    return False
 
 # Helper function that will return the possible moves of a given Queen
 def searchMoves(N, pos):
@@ -151,7 +94,6 @@ def findQueens(b):
         for j in range(len(b)):
             if b[i][j] == 1: 
                 pos.append([i, j])
-    #pry()
     return pos
 
 # Helper function that will return a Board with randomly calculated Queens
@@ -164,4 +106,3 @@ def createBoard(N):
 def printBoard(b):
     for i in b: print(i)
     print(' ')
-
