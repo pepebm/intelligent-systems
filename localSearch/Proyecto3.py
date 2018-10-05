@@ -1,8 +1,7 @@
-from random import randint, seed
+from random import randint
 from copy import deepcopy
 
 def busquedaHC(N, lateral, M):
-    seed(1)
     if lateral:
         print(sideMoveEnabled(N, M))
     else:
@@ -60,7 +59,7 @@ def sideMoveDisabled(N, M):
     while(val != 0):
         print('*'*15,' Round - ', M, ' ', '*'*15)
         M -= 1
-        if not M >= 0:
+        if not M > -1:
             bestVal = 'No solution found'
             break
         for i in range(len(qPos)):
@@ -86,7 +85,11 @@ def sideMoveEnabled(N, M):
     qPos = findQueens(board)
     bestVal = board
     while(val != 0):
-        print('*'*5,' Round - ', val, '*'*5)
+        print('*'*15,' Round - ', M, ' ', '*'*15)
+        M -= 1
+        if not M > -1:
+            bestVal = 'No solution found'
+            break
         for i in range(len(qPos)):
             neighbor = qPos.pop(0)
             moves = searchMoves(N, neighbor)
@@ -143,7 +146,7 @@ def findQueens(b):
 # Helper function that will return a Board with randomly calculated Queens
 def createBoard(N):
     b = [[0] * N for i in range(N)]
-    for i in range(N): b[randint(0, N)][i] = 1
+    for i in range(N): b[randint(0, N - 1)][i] = 1
     return b
 
 # Helper function that will print the board passed
