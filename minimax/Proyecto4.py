@@ -1,24 +1,37 @@
 """
-    Made by: José Manuel Beauregard Méndez - A0101716
-    ---- Reversi with minimax ----
+    Made by: José Manuel Beauregard Méndez - A01021716
+    ---- Reversi Game with minimax ----
 """
 from os import _exit
 from copy import deepcopy
-# TODO Delete this import at end
-import pry
 
+# Defaults
+n = 8
+# Char that represents empty (no move made in that spot) 
+empty = '_'
+# how deep we'll go
+depth = 4
+# 8x8 board filled with the char defined at empty
+board = [[empty for x in range(n)] for y in range(n)]
+# moves that will make the user, the index position is what we'll use
+alphaMove = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+
+# based on x & y, validate the move
 def validMove(board, x, y, player):
-    if x < 0 or x > n - 1 or y < 0 or y > n - 1: return False
-    if board[y][x] != '0': return False
+    if isOnBoard(x, y): return False
+    if board[y][x] != empty: return False
     boardTemp, num = createMove(deepcopy(board), x, y, player)
     if num == 0: return False
     return True
 
+# Get the best move possible, this we'll be used by the computer
 def bestMove(board, player):
+    # starting values
     maxPoints, tempX, tempY = 0, -1, -1
     for y in range(n):
         for x in range(n):
             if validMove(board, x, y, player):
+                # get all the possible moves
                 boardTemp, num = createMove(deepcopy(board), x, y, player)
                 points = minimax(boardTemp, player, depth, True)
                 if points > maxPoints:
@@ -27,69 +40,83 @@ def bestMove(board, player):
                     tempY = y
     return tempX, tempY
 
+# Directions
 movesX = [-1, 0, 1, -1, 1, -1, 0, 1]
 movesY = [-1, -1, -1, 0, 0, 1, 1, 1]
 def createMove(board, x, y, player):
     # total number of opponent pieces taken
     totalNum = 0
+    # assume that the coordinates are valid ones, check after!
     board[y][x] = player
+    # change board based on the new move
     for i in range(n):
         num = 0
         for j in range(n):
             tempX, tempY = x + movesX[i] * (j + 1), y + movesY[i] * (j + 1)
-            if tempX < 0 or tempX > n - 1 or tempY < 0 or tempY > n - 1:
+            if isOnBoard(tempX, tempY):
                 num = 0
                 break
-            elif board[tempY][tempX] == '0':
+            elif board[tempY][tempX] == empty:
                 num = 0
                 break
             elif board[tempY][tempX] == player:
                 break
             else:
                 num += 1
-
-        for j in range(num): board[x + movesX[i] * (j + 1)][y + movesY[i] * (j + 1)] = player
+        # Change values that are enclosed by other player's move
+        for j in range(num): board[y + movesY[i] * (j + 1)][x + movesX[i] * (j + 1)] = player
         totalNum += num
     return (board, totalNum)
 
-def populateBoard():
-    z = int((n - 2) / 2)
-    board[z][z] = '2'
-    board[n - 1 - z][z] = '1'
-    board[z][n - 1 - z] = '1'
-    board[n - 1 - z][n - 1 - z] = '2'
+# Populate board with init values, this never change
+def initBoard():
+    board[3][3] = 'B'
+    board[3][4] = 'W'
+    board[4][3] = 'W'
+    board[4][4] = 'B'
 
+# Print board nicely
 def printBoard():
     m = len(str(n - 1))
-    for y in range(n):
+    print('   ', end='')
+    for i in alphaMove: print(i, end=' ')
+    print()
+    for y in range(1, n + 1):
         row = ''
-        print(row + ' ' + str(y), end=' ')
+        print(row, str(y), end=' ')
         for x in range(n):
-            row += board[y][x]
+            row += board[y - 1][x]
             row += ' ' * m
-        print(row + ' ' + str(y))
-    row = ''
-    for x in range(1, n+1):
-        row += str(x).zfill(m) + ' '
-    print('   ' + row + '\n')
+        print(row, str(y))
+    print('   ', end='')
+    for i in alphaMove: print(i, end=' ')
+    print()
 
+# Get score based on player
 def boardValue(board, player):
     res = 0
     for y in range(n):
         for x in range(n):
             if board[y][x] == player:
-                if (x == 0 or x == n - 1) and (y == 0 or y == n - 1): res += 4  # corner
-                elif (x == 0 or x == n - 1) or (y == 0 or y == n - 1): res += 2  # side
+                # corner
+                if (x == 0 or x == n - 1) and (y == 0 or y == n - 1): res += 4
+                # side
+                elif (x == 0 or x == n - 1) or (y == 0 or y == n - 1): res += 2
                 else: res += 1
     return res
 
-# if no valid move(s) possible then True
+# Validate that position is in bound
+def isOnBoard(x, y):
+    return x < 0 or x > (n - 1) or y < 0 or y > (n - 1)
+
+# checks if there's no more moves
 def pathEnd(board, player):
     for y in range(n):
         for x in range(n):
             if validMove(board, x, y, player): return False
     return True
 
+# sort moves based on player
 def sortNodes(board, player):
     sortedNodes = []
     for y in range(n):
@@ -97,76 +124,78 @@ def sortNodes(board, player):
             if validMove(board, x, y, player):
                 boardTemp, totalNum = createMove(deepcopy(board), x, y, player)
                 sortedNodes.append([boardTemp, boardValue(boardTemp, player)])
-    sortedNodes = sorted(sortedNodes, key=lambda node: node[1], reverse=True)
-    return [node[0] for node in sortedNodes]
+    return [node[0] for node in sorted(sortedNodes, key=lambda node: node[1], reverse=True)]
 
+# the actual minimax appens here, this is used to calculate the best move possible
+# from the computer
 def minimax(board, player, depth, minormax):
-    if depth == 0 or pathEnd(board, player):
-        return boardValue(board, player)
+    if depth == 0 or pathEnd(board, player): return boardValue(board, player)
     # max
     if minormax:
-        bestValue = -1
         for y in range(n):
             for x in range(n):
                 if validMove(board, x, y, player):
                     boardTemp, totalNum = createMove(deepcopy(board), x, y, player)
-                    bestValue = max(bestValue, minimax(boardTemp, player, depth - 1, False))
+                    bestValue = max(-1, minimax(boardTemp, player, depth - 1, False))
     # min
     else:
-        bestValue = n * n + 4 * n + 4 + 1
         for y in range(n):
             for x in range(n):
                 if validMove(board, x, y, player):
                     boardTemp, totalNum = createMove(deepcopy(board), x, y, player)
-                    bestValue = min(bestValue, minimax(boardTemp, player, depth - 1, True))
+                    bestValue = min(n * n + 4 * n + 4 + 1, minimax(boardTemp, player, depth - 1, True))
     return bestValue
 
-# Defaults
-n = 8
-depth = 4
-board = [['0' for x in range(n)] for y in range(n)]
-
-def othello(nivel, fichas, inicio):
+# Params:
+# nivel: 1 o 2
+# fichas: 0 computadora juega blancas, 1 computadora juega negras
+# inicio: 0 inicia la computadora, 1 inicia el jugador
+def othello(nivel = 1, fichas = 1, inicio = 1):
     global depth
     global board
     depth = nivel
     print('Othello BOARD GAME with AI')
-    populateBoard()
+    initBoard()
+    if fichas == 1: computer, p = 'B', 'W'
+    else: computer, p = 'W', 'B'
+    if inicio == 0: order = [computer, p]
+    else: order = [p, computer]
     turn = 0
     while True:
         turn += 1
-        print('='*10, 'Round ' + str(turn), '='*10)
-        for p in range(2):
+        print('='*10, 'Round', str(turn), '='*10)
+        print('\tHuman:', str(boardValue(board, p)))
+        print('\tComputer:', str(boardValue(board, computer)))
+        for player in order:
             print()
             printBoard()
-            player = str(p + 1)
-            print('Human: ') if player == '1' else print('Computer: ')
+            print('Human:', '({})'.format(p)) if player == p else print('Computer: ')
             if pathEnd(board, player):
-                print('No more valid moves\n\tFinal scores:')
-                print('\t\P1: ' + str(boardValue(board, '1')))
-                print('\t\tComputer: ' + str(boardValue(board, '2')))
+                print('No more moves', 'Final scores:', sep='\n')
+                print('\tP1:', str(boardValue(board, p)))
+                print('\tComputer:', str(boardValue(board, computer)))
                 _exit(0)
             # User
-            if player == '1':
+            if player == p:
                 while True:
-                    xy = input('X Y: ')
-                    if xy == '': _exit(0)
+                    userMove = input('X Y: ')
+                    if userMove == '': _exit(0)
                     try:
-                        x, y = xy.split()
+                        x, y = userMove.split()
+                        x, y = alphaMove.index(x.upper()), int(y) - 1
                     except ValueError:
-                        print('*****Invalid input*****\n\tEnter X coordinate followed by a space and then Y coordinate')
+                        print('***** Invalid input *****\n\tEnter X coordinate followed by a space and then Y coordinate')
                         continue
-                    x, y = int(x), int(y)
                     if validMove(board, x, y, player):
                         board, totalNum = createMove(board, x, y, player)
                         print(str(totalNum), 'Piece(s) converted')
                         break
                     else:
-                        print('Invalid move! Try again!')
+                        print('Error: Invalid move! Try again!')
             # Computer
             else:
                 x, y = bestMove(board, player)
-                if not (x == -1 and y == -1):
+                if (x is not -1) and (y is not -1):
                     board, totalNum = createMove(board, x, y, player)
-                    print('Computer moved (X Y): ' + str(x) + ' ' + str(y))
+                    print('Computer moved (X Y):', alphaMove[x],  str(y + 1))
                     print(str(totalNum), 'Piece(s) converted')
